@@ -1,0 +1,54 @@
+1. Node Core Modules
+    Built-in, no npm install needed, included with Node.js installation, highly optimized.
+
+    | Module | Purpose |
+    |--------|---------|
+    | fs     | File System — read/write files |
+    | http   | Create HTTP servers, make HTTP requests |
+    | https  | Same as http, but launches an SSL/secure server |
+    | path   | Handle/transform file paths (cross-OS safe) |
+    | os     | OS-related utility methods and properties |
+    | events | Event-driven programming — EventEmitter |
+    | crypto | Cryptographic functions — hashing, encryption |
+    | url    | Parse and format URL strings |
+
+    ## First code written (fs module):
+
+    const fs = require('fs')
+
+    // Syntax:
+    // fileObj.writeFile( fileDirectory , "Data" , function )
+    fs.writeFile('output.txt', 'writing file', (err) => 
+    {
+        if (err) 
+        {
+            console.log("Error in writing into the file");
+        }
+    })
+
+
+2. Require Keyword
+    - Purpose: imports modules into a Node.js file.
+    - Caching: a module's code runs once — after the first require() call,
+    Node caches the result and returns the same cached object on every
+    subsequent require() of that module (doesn't re-execute the file).
+    - .js extension is added automatically — require('./myModule') works
+    same as require('./myModule.js').
+    - Path Resolution — Node looks in 3 places, in order based on the string:
+    1. Core modules (e.g. require('http')) — built-in, found first.
+    2. node_modules (e.g. require('express')) — third-party packages
+        installed via npm install.
+    3. File paths (e.g. require('./myModule')) — starts with ./ or ../,
+        treated as a relative path to your own local file.
+
+    Syntax:
+    const moduleName = require('module');
+
+    // Load the built-in http module
+    const http = require('http');
+
+    // Load a third-party module (from node_modules)
+    const express = require('express');
+
+    // Load a custom local module
+    const myModule = require('./myModule');
