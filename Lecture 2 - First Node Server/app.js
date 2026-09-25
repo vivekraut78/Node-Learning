@@ -1,6 +1,13 @@
 const http=require('http');
 
-http.createServer(  (req , res)=>
+const server=http.createServer(  (req , res)=>
 {
     console.log(req);
 } , )
+
+const PORT=3001
+
+server.listen(PORT, ()=>
+{
+    console.log(`server running on port http://localhost:${PORT}`);
+});
