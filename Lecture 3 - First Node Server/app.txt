@@ -1,0 +1,48 @@
+1. Creating First Node Server (raw http module)
+
+    // Simple Node.js server:
+-------------------------------------------------------------------------------------------
+    const http = require('http');
+
+    function requestListener(req, res) 
+    {
+        console.log(req);
+    }
+
+    http.createServer(requestListener);
+    ___________________________________ 
+    OR
+
+    const http=require('http');
+    const server=http.createServer((req,res)=>
+    {
+        console.log(req);
+    } );
+
+    server.listen(PORT, ()=>
+    {
+        console.log(`server running on port http://localhost:${PORT}`);
+    });
+
+
+
+--------------------------------------------------------------------------------------------
+    - http.createServer(callback) creates a server; the callback runs
+    automatically every time a request comes in.
+
+    - The callback is passed as a reference (requestListener, no parentheses)
+
+    — Node calls it later, not immediately.
+
+    - Callback receives two objects:
+    - req (request)  → info about the incoming request (URL, method, headers).
+        This is the raw version of what Express turns into req.query/req.params/req.body.
+
+    - res (response) → used to send data back to the client.
+
+    -  .listen(port) — needed to actually start the server
+    listening for incoming connections on a specific port.
+    Then run with node app.js and visit http://localhost:3000 in your browser.
+
+    -use process.exit() to terminate the server if needed.
+
