@@ -1,0 +1,56 @@
+const http=require('http');
+
+const server=http.createServer( (req , res)=>
+{
+    console.log(req.url , req.method, req.headers);
+    if(req.url==='/')
+    {
+        res.setHeader('Content-type','text/html')
+        res.write(`
+            <html>
+                <head>
+                    <title>
+                        My First Page
+                    </title>
+                </head>
+                <body>
+                    <h1>Enter your details: </h1>
+                        <form action="/submit-details" method="POST">
+                            <input type="text" name="username" placeholder="Enter your name">
+                            <br>
+                            <label >Select your gender: </label>
+                            <label for="male">Male</label>
+                            <input type="radio" name="gender" id="male" value="male">
+                            <label for="female">Female</label>
+                            <input type="radio" name="gender" id="female" value="female">
+                            <br>
+                            <input type="submit" value="Submit">
+                        </form>
+                </body>
+            </html>`);
+        return res.end();
+    }
+    res.setHeader('Content-type','text/html')
+    res.write(`<html>`);
+    res.write(`
+        <head>
+            <title>
+                My First Page
+            </title>
+        </head>
+        <body>
+            <h1>Welcome to my website</h1>
+        </body>
+        
+        `);
+    res.write(`</html>`)
+    return res.end();
+    //process.exit(); //Stops the event loop
+} 
+);
+
+const PORT=3001
+server.listen(PORT, ()=>
+{
+    console.log(`server running on port http://localhost:${PORT}`);
+});
