@@ -36,6 +36,7 @@ const server=http.createServer( (req , res)=>
         fs.writeFileSync('user.txt', 'User details submitted successfully');
         res.statusCode=302;
         res.setHeader('Location', '/');
+        return res.end();
     }
     res.setHeader('Content-type','text/html')
     res.write(`<html>`);

@@ -46,3 +46,128 @@
 
     -use process.exit() to terminate the server if needed.
 
+--------------------------------------------------------------------------------------------
+
+2. Request & Response — Node Lifecycle and Event Loop
+
+    - A server keeps running (doesn't exit like a normal script) because
+      .listen() keeps something active in the event loop (an open socket
+      waiting for connections).
+    - Event Loop = single thread that picks tasks off a queue one at a time.
+    - Slow/blocking work (DB, file system, network) is NOT done by the event
+      loop itself — it's handed off to a background Thread Pool.
+    - Thread pool finishes the work → fires a callback → event loop resumes
+      and sends the response.
+    - "Node is single-threaded" only refers to the JS/event loop layer —
+      the thread pool is real, multiple OS threads working underneath.
+    - req and res are just parameter NAMES (not fixed keywords) — but their
+      POSITION is fixed: 1st param = request object, 2nd param = response
+      object, always, regardless of what you call them.
+
+--------------------------------------------------------------------------------------------
+
+3. Understanding the Request Object
+
+    console.log(req.url, req.method, req.headers);
+
+    - req.url     → the path requested (e.g. '/', '/products')
+    - req.method  → 'GET', 'POST', etc.
+    - req.headers → object with request metadata (accept-encoding,
+                    user-agent, etc.)
+    - This is the raw version of what Express turns into req.query /
+      req.params / req.body automatically.
+
+--------------------------------------------------------------------------------------------
+
+4. Sending a Response
+
+    res.setHeader('Content-Type', 'text/html');
+    res.write('<html>...</html>');
+    res.end();
+
+    - setHeader() tells the browser how to interpret the response body
+      (e.g. render as HTML vs plain text).
+    - write() can be called multiple times — each call appends to the
+      response body buffer.
+    - Nothing is actually sent until end() is called — end() finalizes
+      and flushes the response.
+    - Calling setHeader/write/end AGAIN after res.end() has already run
+      throws: "ERR_HTTP_HEADERS_SENT" — the response is already finished.
+
+--------------------------------------------------------------------------------------------
+
+5. Routing Requests (based on req.url)
+
+    if (req.url === '/') {
+        // home page response
+        return res.end();
+    } else if (req.url === '/products') {
+        // products page response
+        return res.end();
+    } else {
+        res.statusCode = 404;
+        // fallback / not-found response
+        return res.end();
+    }
+
+    - Manual version of what Express's app.get('/route', ...) does.
+    - IMPORTANT: use `return res.end()` in every branch — otherwise code
+      after the if/else chain keeps running and tries to send a second
+      response, causing ERR_HTTP_HEADERS_SENT.
+    - A browser always also requests /favicon.ico automatically — without
+      routing, this hits the same branch as everything else.
+    - A proper "else" fallback should send a 404 status + a not-found
+      message, not just repeat one of the other pages' content.
+
+--------------------------------------------------------------------------------------------
+
+6. Taking User Input (HTML form → server)
+
+    <form action="/submit-details" method="POST">
+        <input type="text" name="username" placeholder="Enter your name">
+        <label for="male">Male</label>
+        <input type="radio" name="gender" id="male" value="male">
+        <label for="female">Female</label>
+        <input type="radio" name="gender" id="female" value="female">
+        <input type="submit" value="Submit">
+    </form>
+
+    - action = the URL the form data is sent to (becomes req.url on submit)
+    - method = "POST" → data goes in the request BODY (not the URL)
+               "GET" (default if omitted) → data goes in the URL as a
+               query string, e.g. /?username=Vivek&gender=male
+    - Each input's `name` attribute is the key used when the browser
+      packages the data — inputs without a name attribute are NOT sent.
+    - label's `for` attribute must match the paired input's `id` exactly,
+      or clicking the label toggles the WRONG input.
+
+--------------------------------------------------------------------------------------------
+
+7. Redirecting Requests (Post/Redirect/Get pattern)
+
+    else if (req.url.toLowerCase() === '/submit-details'
+             && req.method.toLowerCase() === 'post') {
+        fs.writeFileSync('user.txt', 'User details submitted successfully');
+        res.statusCode = 302;
+        res.setHeader('Location', '/');
+        return res.end();
+    }
+
+    - A redirect = a 3xx status code + a "Location" header. No res.write()
+      needed — the browser makes a fresh request to Location on its own.
+    - 302 = temporary redirect, 301 = permanent redirect.
+    - PRG pattern (Post → Redirect → Get): after handling a form POST,
+      redirect instead of directly rendering a response. This avoids the
+      "Confirm Form Resubmission" browser warning if the user refreshes —
+      after redirecting, the browser is sitting on a plain GET, which is
+      safe to refresh.
+    - Common bugs to watch for:
+      - res.statusCode is a PROPERTY, not a function — use
+        `res.statusCode = 302;` not `res.statusCode(302);`
+      - Don't lowercase req.method and then compare it to an UPPERCASE
+        string — e.g. req.method.toLowerCase() === 'POST' will never match;
+        compare to 'post' (lowercase) instead.
+      - Always return res.end() in this branch too, or code below it will
+        still run and try to send a second response.
+
+--------------------------------------------------------------------------------------------
