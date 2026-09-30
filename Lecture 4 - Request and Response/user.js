@@ -34,7 +34,7 @@ const server=http.createServer( (req , res)=>
     else if(req.url.toLocaleLowerCase()==='/submit-details' && req.method.toLocaleLowerCase()==='POST')
     {
         fs.writeFileSync('user.txt', 'User details submitted successfully');
-        res.statusCode(302);
+        res.statusCode=302;
         res.setHeader('Location', '/');
     }
     res.setHeader('Content-type','text/html')
