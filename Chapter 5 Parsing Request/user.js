@@ -3,7 +3,7 @@ const fs=require('fs');
 
 const server=http.createServer( (req , res)=>
 {
-    console.log(req.url , req.method, req.headers);
+    console.log(req.url , req.method);
     if(req.url==='/')
     {
         res.setHeader('Content-type','text/html')
@@ -31,12 +31,22 @@ const server=http.createServer( (req , res)=>
             </html>`);
         return res.end();
     }
-    else if(req.url.toLocaleLowerCase()==='/submit-details' && req.method.toLocaleLowerCase()==='post')
+    else if(req.url.toLocaleLowerCase()==='/submit-details' 
+            && req.method.toLocaleLowerCase()==='post')
     {
+        const body=[];
         req.on('data', chunk=>
         {
             console.log(chunk);  
+            body.push(chunk);
         });
+
+        req.on('end',()=>
+        {
+            const fullBody=Buffer.concat(body).toString();
+            console.log(fullBody);
+        })
+
         fs.writeFileSync('user.txt', 'User details submitted successfully');
         res.statusCode=302;
         res.setHeader('Location', '/');
