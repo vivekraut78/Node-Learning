@@ -31,6 +31,7 @@ const server=http.createServer( (req , res)=>
             </html>`);
         return res.end();
     }
+
     else if(req.url.toLocaleLowerCase()==='/submit-details' 
             && req.method.toLocaleLowerCase()==='post')
     {
@@ -44,14 +45,29 @@ const server=http.createServer( (req , res)=>
         req.on('end',()=>
         {
             const fullBody=Buffer.concat(body).toString();
-            console.log(fullBody);
-        })
+            //console.log(fullBody);  This will print the data in the form of query string
+            const params=new URLSearchParams(fullBody);
+            
+            
+            // const bodyObject={};
+            // for(const [key, value] of params.entries())
+            // {
+            //     bodyObject[key]=value;
+            // }
+            // console.log(bodyObject); //This will print the data in the form of object
 
-        fs.writeFileSync('user.txt', 'User details submitted successfully');
+
+            const bodyObject=Object.fromEntries(params.entries());
+            console.log(bodyObject); 
+            fs.writeFileSync('user.txt', 'User details submitted successfully');
+        });
+
         res.statusCode=302;
         res.setHeader('Location', '/');
         return res.end();
     }
+
+
     res.setHeader('Content-type','text/html')
     res.write(`<html>`);
     res.write(`
@@ -70,6 +86,9 @@ const server=http.createServer( (req , res)=>
     //process.exit(); //Stops the event loop
 } 
 );
+
+
+
 
 const PORT=3001
 server.listen(PORT, ()=>
