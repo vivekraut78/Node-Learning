@@ -1,14 +1,14 @@
 const http=require('http');
 const fs=require('fs');
 
-const server=http.createServer( (req , res)=>
+const requestHandler=( (req , res)=>
 {
     console.log(req.url , req.method);
     if(req.url==='/')
     {
         res.setHeader('Content-type','text/html')
         res.write(`
-            <html>
+            <html>()
                 <head>
                     <title>
                         My First Page
@@ -90,8 +90,5 @@ const server=http.createServer( (req , res)=>
 
 
 
-const PORT=3001
-server.listen(PORT, ()=>
-{
-    console.log(`server running on port http://localhost:${PORT}`);
-});
+
+module.exports=requestHandler;
