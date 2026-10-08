@@ -8,7 +8,7 @@ const requestHandler=( (req , res)=>
     {
         res.setHeader('Content-type','text/html')
         res.write(`
-            <html>()
+            <html>
                 <head>
                     <title>
                         My First Page
@@ -86,9 +86,5 @@ const requestHandler=( (req , res)=>
     //process.exit(); //Stops the event loop
 } 
 );
-
-
-
-
 
 module.exports=requestHandler;

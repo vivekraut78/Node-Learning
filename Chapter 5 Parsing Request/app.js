@@ -1,10 +1,10 @@
 const http=require('http');
-const userRequestHandler=require('./user');
+const requestHandler=require('./user');
 
-const server=http.createServer(userRequestHandler);
+const server=http.createServer(requestHandler);
 
 const port=3000;
 server.listen(port,()=>
 {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on port http://localhost:${port}`);
 });

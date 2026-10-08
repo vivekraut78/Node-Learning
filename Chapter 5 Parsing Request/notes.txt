@@ -1,0 +1,136 @@
+1. Parsing a Request Body (Streams, Chunks, Buffers)
+
+    - req is a READABLE STREAM, not a value that's just sitting there
+      waiting. The body arrives over time, piece by piece, as the network
+      delivers it — same event-driven model as topic 2.
+    - Because req is a stream, it's also an EventEmitter: you listen for
+      its events with req.on(eventName, callback), same pattern as any
+      other event-driven Node API.
+
+    const body = [];
+    req.on('data', chunk => 
+    {
+        body.push(chunk);
+    });
+    req.on('end', () => 
+    {
+        // full body is now available
+    });
+
+    - 'data' event fires once per CHUNK as it arrives. A small form body
+      is usually one chunk, but a large upload (e.g. a file) can arrive as
+      many — code must never assume it's just one.
+    - Each chunk is a Buffer (raw bytes), not a string. console.log(chunk)
+      prints something like <Buffer 75 73 65 72 3d ...> — that's the ASCII
+      codes of the raw data.
+    - 'end' event fires exactly once, after the LAST chunk has arrived.
+      This is the only safe place to treat the body as complete — reading
+      it inside 'data' would give partial data.
+    - body is just a plain array used to collect every chunk as it comes
+      in, so they can all be joined together once 'end' fires.
+
+--------------------------------------------------------------------------------------------
+
+2. Buffer.concat() and Turning Bytes into a String
+
+    req.on('end', () => 
+    {
+        const fullBody = Buffer.concat(body).toString();
+        console.log(fullBody);  // e.g. "username=Vivek&gender=male"
+    });
+
+    - Buffer.concat(arrayOfBuffers) merges all the collected chunks into
+      ONE buffer — can't just .toString() each chunk separately, since a
+      single value (like one character) can theoretically be split across
+      two chunks.
+    - .toString() decodes the merged buffer as UTF-8 text by default,
+      turning raw bytes into a readable string.
+    - The resulting string is in application/x-www-form-urlencoded format
+      (browser's default encoding for HTML form POSTs): key=value pairs
+      joined by &, special characters percent-encoded, spaces as + or %20.
+
+--------------------------------------------------------------------------------------------
+
+3. Parsing the Body String (URLSearchParams)
+
+    const params = new URLSearchParams(fullBody);
+    const bodyObject = Object.fromEntries(params.entries());
+    console.log(bodyObject);  // { username: 'Vivek', gender: 'male' }
+
+    - URLSearchParams is a built-in GLOBAL — no require() needed. It parses
+      the key=value&key=value format automatically, including decoding
+      percent-encoded characters.
+    - params.entries() gives [key, value] pairs. Object.fromEntries()
+      converts those pairs into a plain object in one line.
+    - (Manual equivalent, same result, just explicit:)
+        const bodyObject = {};
+        for (const [key, value] of params.entries()) 
+        {
+            bodyObject[key] = value;
+        }
+    - bodyObject is a plain JS object, NOT a JSON string — needs
+      JSON.stringify(bodyObject) before writing it to a file as JSON text.
+    - Each input's name attribute (topic 6) is exactly the key that shows
+      up here — confirms why the name attribute matters.
+
+--------------------------------------------------------------------------------------------
+
+4. IMPORTANT BUG — Responding Before the Body Is Parsed
+
+    req.on('end', () => 
+    {
+        // ... parsing + fs.writeFileSync happen here, LATER
+    });
+
+    res.statusCode = 302;        // runs IMMEDIATELY
+    res.setHeader('Location', '/');
+    return res.end();            // response already finished
+
+    - Registering req.on(...) listeners does NOT pause execution — the
+      handler keeps running past them immediately. The 'end' callback
+      only fires later, once the stream finishes.
+    - BUG: as written, the redirect fires before the body has even been
+      read/parsed/saved. Works by luck because the write is fast, but the
+      user is told "done" before the real work happens.
+    - FIX: move the response (res.statusCode, setHeader, res.end()) INSIDE
+      the 'end' callback, after the data is parsed and saved:
+
+        req.on('end', () => 
+        {
+            const fullBody = Buffer.concat(body).toString();
+            const bodyObject = Object.fromEntries(new URLSearchParams(fullBody));
+            fs.writeFileSync('user.txt', JSON.stringify(bodyObject));
+
+            res.statusCode = 302;
+            res.setHeader('Location', '/');
+            res.end();
+        });
+        return;   // don't fall through to the code below
+
+    - The trailing `return;` (outside the callback) matters too — without
+      it, execution falls through to the "welcome page" code further
+      down, which would try to send a second response.
+
+--------------------------------------------------------------------------------------------
+
+5. Using Modules (module.exports / require)
+
+    // user.js
+    const requestHandler = (req, res) => { ... };
+    module.exports = requestHandler;
+
+    // app.js
+    const requestHandler = require('./user');
+    const server = http.createServer(requestHandler);
+
+    - module.exports = value makes that value the thing another file gets
+      back from require(). Here it's a single function, so require('./user')
+      returns that function directly (no destructuring needed).
+    - The './' in require('./user') is required — without it, Node looks
+      in node_modules / core modules instead of the local folder.
+    - require() is cached (Day 1) — user.js's top-level code only runs
+      once, no matter how many files require it.
+    - This is the manual version of splitting Express routes/controllers
+      into separate files and importing them into the main app file.
+
+--------------------------------------------------------------------------------------------
