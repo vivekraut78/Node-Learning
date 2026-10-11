@@ -1,22 +1,20 @@
 const sumRequestHandler=(req,res)=>
-{
-    console.log('In sum request handler',req.url,);
+{   console.log('1.In sum request handler',req.url,);
     const body=[];
     req.on('data',(chunk)=>
     {   
-        console.log(chunk);
         body.push(chunk);
+        console.log('2.Chunk came');
     });
-    
-    req.on('end',()=>
-    {
+    req.on('end',()=>{
+        console.log('3.end event came');
         const bodyStr=Buffer.concat(body).toString();
         const params=new URLSearchParams(bodyStr);
-        const bodyObj=Object.fromEntries(params.entries());
-        console.log(bodyObj);
+        const bodyObj=Object.fromEntries(params);
         const result=Number(bodyObj.num1)+Number(bodyObj.num2);
         console.log(result);
         
+        console.log(`4. sending the response`)
         res.setHeader('Content-Type','text/html');
         res.write
         (`
