@@ -32,8 +32,7 @@ const requestHandler=( (req , res)=>
         return res.end();
     }
 
-    else if(req.url.toLocaleLowerCase()==='/submit-details' 
-            && req.method.toLocaleLowerCase()==='post')
+    else if(req.url.toLocaleLowerCase()==='/submit-details' && req.method.toLocaleLowerCase()==='post')
     {
         const body=[];
         req.on('data', chunk=>
@@ -41,7 +40,6 @@ const requestHandler=( (req , res)=>
             console.log(chunk);  
             body.push(chunk);
         });
-
         req.on('end',()=>
         {
             const fullBody=Buffer.concat(body).toString();
@@ -49,33 +47,35 @@ const requestHandler=( (req , res)=>
             const params=new URLSearchParams(fullBody);
             const bodyObject=Object.fromEntries(params.entries());
             console.log(bodyObject); 
-            fs.writeFile('user.txt', 'User details submitted successfully');
-            res.statusCode=302;
-            res.setHeader('Location', '/');
+            fs.writeFile('user.txt', JSON.stringify(bodyObject), (error)=>
+            {
+                console.log('File written successfully');
+                res.statusCode=302;
+                res.setHeader('Location', '/');
+                return res.end();
+            });
         });
-
-        res.statusCode=302;
-        res.setHeader('Location', '/');
-        return res.end();
     }
-
-
-    res.setHeader('Content-type','text/html')
-    res.write(`<html>`);
-    res.write(`
-        <head>
-            <title>
-                My First Page
-            </title>
-        </head>
-        <body>
-            <h1>Welcome to my website</h1>
-        </body>
-        
-        `);
-    res.write(`</html>`)
-    return res.end();
-    //process.exit(); //Stops the event loop
+    else
+    {
+        res.setHeader('Content-type','text/html')
+        res.write(`<html>`);
+        res.write(`
+            <head>
+                <title>
+                    My First Page
+                </title>
+            </head>
+            <body>
+                <h1>Welcome to my website</h1>
+            </body>
+            
+            `);
+        res.write(`</html>`)
+        return res.end();
+        //process.exit(); //Stops the event loop
+    }
+    
 } 
 );
 
