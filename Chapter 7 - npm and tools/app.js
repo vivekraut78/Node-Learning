@@ -11,3 +11,5 @@ server.listen(3000,()=>{
     console.log('Server is running on port 3000 :','http://localhost:3000');
 });
 
+
+//run npm init to create package.json file
